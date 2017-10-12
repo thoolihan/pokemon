@@ -2,6 +2,11 @@ library(ggplot2)
 library(dplyr)
 
 pkmn <- read.csv(unz("data/kaggle/pokemon802.zip", "pokemon.csv"))
+pkmn <- pkmn %>%
+  mutate(bulbapedia_url = paste("https://bulbapedia.bulbagarden.net/wiki/", name, sep = ""),
+         serebii_url = paste("https://www.serebii.net/pokedex-sm/", sprintf("%03d", pokedex_number), ".shtml", sep = ""),
+         gamefreak_url = paste("https://www.pokemon.com/us/pokedex/", tolower(name), sep = ""),
+         pokeapi_url = paste("http://pokeapi.co/api/v2/pokemon/", pokedex_number, sep = ""))
 
 print(names(pkmn))
 
@@ -33,10 +38,9 @@ g <- ggplot(pkmn, aes(x = defense, y = attack, color = type1)) +
    geom_point()
 print(g)
 
-# highest attack times defense
+# highest combo of stats
 pkmn %>%
-  mutate(total_power = attack * defense * sp_defense * sp_attack) %>%
-  arrange(desc(total_power)) %>%
+  arrange(desc(attack + defense + sp_defense + sp_attack)) %>%
   select(pokedex_number, name, attack, defense, sp_attack, sp_defense, is_legendary) %>%
   head(n = 10)
 
@@ -49,5 +53,17 @@ pkmn %>%
 # highest sp_attack
 pkmn %>%
   arrange(desc(sp_attack), desc(attack)) %>%
+  select(pokedex_number, name, attack, defense, sp_attack, sp_defense, is_legendary) %>%
+  head(n = 10)
+
+# highest defense
+pkmn %>%
+  arrange(desc(defense), desc(sp_defense)) %>%
+  select(pokedex_number, name, attack, defense, sp_attack, sp_defense, is_legendary) %>%
+  head(n = 10)
+
+# highest sp_defense
+pkmn %>%
+  arrange(desc(sp_defense), desc(defense)) %>%
   select(pokedex_number, name, attack, defense, sp_attack, sp_defense, is_legendary) %>%
   head(n = 10)
