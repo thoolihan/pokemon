@@ -1,5 +1,6 @@
 library(ggplot2)
 library(dplyr)
+library(rlang)
 
 pkmn <- read.csv(unz("data/kaggle/pokemon802.zip", "pokemon.csv"))
 pkmn <- pkmn %>%
@@ -19,51 +20,35 @@ print(types)
 View(as.data.frame.matrix(types))
 
 # Plot type1 vs type2
-g <- ggplot(pkmn, aes(x = type1, y = type2)) +
- geom_jitter()
-print(g)
+print(qplot(x = type1, y = type2, data = pkmn, geom = "jitter"))
 
 # Plot attack by type1
-g <- ggplot(pkmn, aes(x = type1, y = attack, color = type2)) +
-   geom_point()
-print(g)
+print(qplot(x = type1, y = attack, data = pkmn, color = type2, geom = "point"))
 
 # Plot attack by type1
-g <- ggplot(pkmn, aes(x = type1, y = attack)) +
-   geom_boxplot()
-print(g)
+print(qplot(x = type1, y = attack, data = pkmn, geom = "boxplot"))
 
 # Plot attack by defense
-g <- ggplot(pkmn, aes(x = defense, y = attack, color = type1)) +
-   geom_point()
-print(g)
+print(qplot(x = defense, y = attack, data = pkmn, color = type2, geom = "point"))
 
-# highest combo of stats
-pkmn %>%
-  arrange(desc(attack + defense + sp_defense + sp_attack)) %>%
-  select(pokedex_number, name, attack, defense, sp_attack, sp_defense, is_legendary) %>%
-  head(n = 10)
+show_best <- function(pk, sort_expr, description = "", n = 10, ...) {
+  print(description)
+  print(pk %>%
+          arrange(., eval_tidy(sort_expr, data = pk)) %>%
+          select(pokedex_number, name, attack, defense, sp_attack, 
+                 sp_defense, is_legendary) %>%
+          head(., n = n))
+}
 
-# highest attack
-pkmn %>%
-  arrange(desc(attack), desc(sp_attack)) %>%
-  select(pokedex_number, name, attack, defense, sp_attack, sp_defense, is_legendary) %>%
-  head(n = 10)
+show_best(pkmn, quo(desc(attack + defense + sp_defense + sp_attack)), description = "sum of stats")
+show_best(pkmn, quo(desc(attack)), description = "attack")
+show_best(pkmn, quo(desc(sp_attack)), description = "sp_attack")
+show_best(pkmn, quo(desc(defense)), description = "defense")
+show_best(pkmn, quo(desc(sp_defense)), description = "sp_defense")
 
-# highest sp_attack
-pkmn %>%
-  arrange(desc(sp_attack), desc(attack)) %>%
-  select(pokedex_number, name, attack, defense, sp_attack, sp_defense, is_legendary) %>%
-  head(n = 10)
-
-# highest defense
-pkmn %>%
-  arrange(desc(defense), desc(sp_defense)) %>%
-  select(pokedex_number, name, attack, defense, sp_attack, sp_defense, is_legendary) %>%
-  head(n = 10)
-
-# highest sp_defense
-pkmn %>%
-  arrange(desc(sp_defense), desc(defense)) %>%
-  select(pokedex_number, name, attack, defense, sp_attack, sp_defense, is_legendary) %>%
-  head(n = 10)
+non_leg <- filter(pkmn, is_legendary == FALSE)
+show_best(non_leg, quo(desc(attack + defense + sp_defense + sp_attack)), description = "sum of stats")
+show_best(non_leg, quo(desc(attack)), description = "attack")
+show_best(non_leg, quo(desc(sp_attack)), description = "sp_attack")
+show_best(non_leg, quo(desc(defense)), description = "defense")
+show_best(non_leg, quo(desc(sp_defense)), description = "sp_defense")
